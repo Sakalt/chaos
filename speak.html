@@ -61,7 +61,7 @@
             }
 
             // ちいかわのセリフを音声で再生
-            speak(`ちいかわ: ${inputText}`, 'Google 日本語', 1.5, 1.0);
+            speak(`ちいかわ: ${inputText}`, 'Google 日本語', 9, 8);
 
             // 音声認識を開始
             recognition.start();
@@ -79,7 +79,7 @@
                     }
                 }).join(' ');
 
-                speak(`ハチワレ: ${hachiwareText}`, 'Google 日本語', 0.9, 1.2);
+                speak(`ハチワレ: ${hachiwareText}`, 'Google 日本語', 7, 9);
             };
 
             recognition.onerror = function(event) {
