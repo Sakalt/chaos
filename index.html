@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カオスなWebゲーム</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            border: 2px solid #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #character-select, #inventory {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 80%;
+            background-color: #fff;
+            border: 1px solid #ddd;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- キャラクター選択画面 -->
+        <div id="character-select">
+            <h2>キャラクター選択</h2>
+            <div id="characters">
+                <!-- 各キャラクターのボタンがここに追加されます -->
+            </div>
+            <button id="startBattleButton">バトル開始</button>
+        </div>
+
+        <!-- 戦闘画面 -->
+        <div id="battle-screen" style="display: none;">
+            <canvas id="battleCanvas"></canvas>
+            <button id="attackButton">攻撃</button>
+            <button id="useMagicButton">魔法使用</button>
+        </div>
+
+        <!-- インベントリ画面 -->
+        <button id="openInventoryButton" style="display: none;">インベントリを開く</button>
+        <div id="inventory" style="display: none;">
+            <h2>インベントリ</h2>
+            <div id="inventoryItems"></div>
+            <button id="closeInventoryButton">閉じる</button>
+        </div>
+    </div>
+
+    <script>
+        // ゲームの基本設定
+        const canvas = document.getElementById('battleCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 800;
+        canvas.height = 600;
+
+        // キャラクター情報の設定に魔法を追加
+        const characters = [
+            { name: 'ちいかわ', hp: 100, magic: { name: 'Fireball', damage: 30, type: 'fire' }, image: 'imagechiikawa.png', level: 1, exp: 0 },
+            { name: 'ハチワレ', hp: 120, magic: { name: 'Ice Blast', damage: 25, type: 'ice' }, image: image/hachiware.png', level: 1, exp: 0 }
+        ];
+
+        // 敵キャラ情報に魔法を追加
+        let enemy = { name: '敵キャラ', hp: 100, magic: { name: 'Dark Blast', damage: 20, type: 'dark' }, level: 1 };
+
+        // ローカルストレージからデータを読み込む
+        let selectedCharacter = JSON.parse(localStorage.getItem('selectedCharacter')) || null;
+        let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+
+        // キャラクター選択画面の構築
+        const characterContainer = document.getElementById('characters');
+        characters.forEach(character => {
+            const btn = document.createElement('button');
+            btn.innerText = character.name;
+            btn.onclick = () => selectCharacter(character);
+            characterContainer.appendChild(btn);
+        });
+
+        // キャラクター選択時の処理
+        function selectCharacter(character) {
+            selectedCharacter = character;
+            localStorage.setItem('selectedCharacter', JSON.stringify(selectedCharacter));
+            alert(`${character.name} を選択しました！`);
+        }
+
+        // バトル開始ボタンの設定
+        document.getElementById('startBattleButton').addEventListener('click', () => {
+            if (!selectedCharacter) {
+                alert('キャラクターを選択してください！');
+                return;
+            }
+            document.getElementById('character-select').style.display = 'none';
+            document.getElementById('battle-screen').style.display = 'block';
+            document.getElementById('openInventoryButton').style.display = 'block';
+            startBattle();
+        });
+
+        // 魔法を使用する処理
+        function useMagic(attacker, target) {
+            alert(`${attacker.name} の ${attacker.magic.name}！`);
+            target.hp -= attacker.magic.damage;
+            if (target.hp < 0) target.hp = 0;
+            alert(`${target.name} に ${attacker.magic.damage} のダメージ！残りHP: ${target.hp}`);
+            if (target.hp === 0) {
+                battleEnd(attacker.name === selectedCharacter.name ? 'player' : 'enemy');
+            }
+        }
+
+        // バトル開始時に魔法を使う例
+        function startBattle() {
+            drawBattle(selectedCharacter, enemy);
+            setTimeout(() => {
+                useMagic(selectedCharacter, enemy); // プレイヤーが攻撃
+                setTimeout(() => useMagic(enemy, selectedCharacter), 2000); // 敵の反撃
+            }, 1000);
+        }
+
+        // バトルの描画
+        function drawBattle(player, enemy) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(50, 100, 100, 100);
+            ctx.fillText(`${player.name} HP: ${player.hp}`, 50, 90);
+            ctx.fillStyle = 'red';
+            ctx.fillRect(650, 100, 100, 100);
+            ctx.fillText(`${enemy.name} HP: ${enemy.hp}`, 650, 90);
+        }
+
+        // バトル終了後の処理
+        function battleEnd(winner) {
+            if (winner === 'player') {
+                alert('勝利しました！経験値を獲得！');
+                gainExp(selectedCharacter, 50);
+            } else {
+                alert('敗北しました...');
+            }
+        }
+
+        // 経験値を取得し、レベルアップを確認
+        function gainExp(character, exp) {
+            character.exp += exp;
+            checkLevelUp(character);
+            localStorage.setItem('selectedCharacter', JSON.stringify(character));
+        }
+
+        // レベルアップの判定
+        function checkLevelUp(character) {
+            const expTable = [0, 100, 250, 500, 1000];
+            const nextLevel = character.level + 1;
+            if (expTable[nextLevel] && character.exp >= expTable[nextLevel]) {
+                character.level = nextLevel;
+                character.hp += 20;
+                character.exp -= expTable[nextLevel];
+                alert(`${character.name} はレベル ${character.level} に上がった！`);
+            }
+        }
+
+        // インベントリ管理
+        function addItem(item) {
+            inventory.push(item);
+            localStorage.setItem('inventory', JSON.stringify(inventory));
+            alert(`${item.name} を手に入れた！`);
+        }
+
+        function useItem(itemName) {
+            const itemIndex = inventory.findIndex(item => item.name === itemName);
+            if (itemIndex !== -1) {
+                const item = inventory[itemIndex];
+                applyItemEffect(selectedCharacter, item);
+                inventory.splice(itemIndex, 1);
+                localStorage.setItem('inventory', JSON.stringify(inventory));
+                alert(`${itemName} を使用しました！`);
+            } else {
+                alert('そのアイテムは持っていません。');
+            }
+        }
+
+        function applyItemEffect(character, item) {
+            if (item.type === 'healing') {
+                character.hp += item.effectValue;
+                alert(`${character.name} のHPが ${item.effectValue} 回復した！`);
+            }
+        }
+
+        // インベントリの開閉
+        document.getElementById('openInventoryButton').addEventListener('click', () => {
+            document.getElementById('inventory').style.display = 'block';
+            renderInventory();
+        });
+
+        document.getElementById('closeInventoryButton').addEventListener('click', () => {
+            document.getElementById('inventory').style.display = 'none';
+        });
+
+        // インベントリの表示
+        function renderInventory() {
+            const inventoryItems = document.getElementById('inventoryItems');
+            inventoryItems.innerHTML = '';
+            inventory.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.innerText = `${item.name} (${item.type})`;
+                itemDiv.onclick = () => useItem(item.name);
+                inventoryItems.appendChild(itemDiv);
+            });
+        }
+
+        // アイテムの例
+        addItem({ name: 'ポーション', type: 'healing', effectValue: 50 });
+    </script>
+</body>
+</html>
