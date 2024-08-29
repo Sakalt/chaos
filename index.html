@@ -81,12 +81,12 @@
 
         // キャラクター情報の設定に魔法を追加
         const characters = [
-            { name: 'ちいかわ', hp: 100, magic: { name: 'Fireball', damage: 30, type: 'fire' }, image: 'image/chiikawa.png', level: 1, exp: 0 },
-            { name: 'ハチワレ', hp: 120, magic: { name: 'Ice Blast', damage: 25, type: 'ice' }, image: 'image/hachiware.png', level: 1, exp: 0 }
+            { name: 'ちいかわ', hp: 100, maxHp: 100, magic: { name: 'Fireball', damage: 30, type: 'fire' }, image: 'image/chiikawa.png', level: 1, exp: 0 },
+            { name: 'ハチワレ', hp: 120, maxHp: 120, magic: { name: 'Ice Blast', damage: 25, type: 'ice' }, image: 'image/hachiware.png', level: 1, exp: 0 }
         ];
 
         // 敵キャラ情報に魔法を追加
-        let enemy = { name: '敵キャラ', hp: 100, magic: { name: 'Dark Blast', damage: 20, type: 'dark' }, level: 1 };
+        let enemy = { name: '敵キャラ', hp: 100, maxHp: 100, magic: { name: 'Dark Blast', damage: 20, type: 'dark' }, level: 1 };
 
         // ローカルストレージからデータを読み込む
         let selectedCharacter = JSON.parse(localStorage.getItem('selectedCharacter')) || null;
@@ -125,7 +125,20 @@
             alert(`${attacker.name} の ${attacker.magic.name}！`);
             target.hp -= attacker.magic.damage;
             if (target.hp < 0) target.hp = 0;
+            drawBattle(selectedCharacter, enemy);
             alert(`${target.name} に ${attacker.magic.damage} のダメージ！残りHP: ${target.hp}`);
+            if (target.hp === 0) {
+                battleEnd(attacker.name === selectedCharacter.name ? 'player' : 'enemy');
+            }
+        }
+
+        // 攻撃を行う処理
+        function attack(attacker, target) {
+            const damage = Math.floor(Math.random() * 10) + 10; // 10-20のランダムダメージ
+            target.hp -= damage;
+            if (target.hp < 0) target.hp = 0;
+            drawBattle(selectedCharacter, enemy);
+            alert(`${attacker.name} が ${target.name} に ${damage} のダメージ！残りHP: ${target.hp}`);
             if (target.hp === 0) {
                 battleEnd(attacker.name === selectedCharacter.name ? 'player' : 'enemy');
             }
@@ -134,21 +147,25 @@
         // バトル開始時に魔法を使う例
         function startBattle() {
             drawBattle(selectedCharacter, enemy);
-            setTimeout(() => {
-                useMagic(selectedCharacter, enemy); // プレイヤーが攻撃
-                setTimeout(() => useMagic(enemy, selectedCharacter), 2000); // 敵の反撃
-            }, 1000);
         }
 
         // バトルの描画
         function drawBattle(player, enemy) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'blue';
-            ctx.fillRect(50, 100, 100, 100);
-            ctx.fillText(`${player.name} HP: ${player.hp}`, 50, 90);
-            ctx.fillStyle = 'red';
-            ctx.fillRect(650, 100, 100, 100);
-            ctx.fillText(`${enemy.name} HP: ${enemy.hp}`, 650, 90);
+            const playerImg = new Image();
+            playerImg.src = player.image;
+            const enemyImg = new Image();
+            enemyImg.src = 'image/enemy.png'; // 敵の画像パスを設定
+
+            // キャラクター画像の描画
+            playerImg.onload = () => ctx.drawImage(playerImg, 50, 150, 100, 100);
+            enemyImg.onload = () => ctx.drawImage(enemyImg, 650, 150, 100, 100);
+
+            // HPの表示
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText(`${player.name} HP: ${player.hp}/${player.maxHp}`, 50, 130);
+            ctx.fillText(`${enemy.name} HP: ${enemy.hp}/${enemy.maxHp}`, 650, 130);
         }
 
         // バトル終了後の処理
@@ -174,7 +191,8 @@
             const nextLevel = character.level + 1;
             if (expTable[nextLevel] && character.exp >= expTable[nextLevel]) {
                 character.level = nextLevel;
-                character.hp += 20;
+                character.maxHp += 20;
+                character.hp = character.maxHp; // レベルアップ時にHP全回復
                 character.exp -= expTable[nextLevel];
                 alert(`${character.name} はレベル ${character.level} に上がった！`);
             }
@@ -203,33 +221,24 @@
         function applyItemEffect(character, item) {
             if (item.type === 'healing') {
                 character.hp += item.effectValue;
-                alert(`${character.name} のHPが ${item.effectValue} 回復した！`);
+                if (character.hp > character.maxHp) character.hp = character.maxHp;
             }
+            drawBattle(selectedCharacter, enemy);
         }
 
-        // インベントリの開閉
+        // 攻撃と魔法使用ボタンのイベント
+        document.getElementById('attackButton').addEventListener('click', () => attack(selectedCharacter, enemy));
+        document.getElementById('useMagicButton').addEventListener('click', () => useMagic(selectedCharacter, enemy));
+
+        // インベントリ操作
         document.getElementById('openInventoryButton').addEventListener('click', () => {
             document.getElementById('inventory').style.display = 'block';
-            renderInventory();
         });
-
         document.getElementById('closeInventoryButton').addEventListener('click', () => {
             document.getElementById('inventory').style.display = 'none';
         });
 
-        // インベントリの表示
-        function renderInventory() {
-            const inventoryItems = document.getElementById('inventoryItems');
-            inventoryItems.innerHTML = '';
-            inventory.forEach(item => {
-                const itemDiv = document.createElement('div');
-                itemDiv.innerText = `${item.name} (${item.type})`;
-                itemDiv.onclick = () => useItem(item.name);
-                inventoryItems.appendChild(itemDiv);
-            });
-        }
-
-        // アイテムの例
+        // アイテム追加の例
         addItem({ name: 'ポーション', type: 'healing', effectValue: 50 });
     </script>
 </body>
