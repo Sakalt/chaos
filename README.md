@@ -1,1 +1,1 @@
-https://sakalt.github.io/speak.html
+https://sakalt.github.io/chaos/speak.html
