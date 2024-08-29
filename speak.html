@@ -37,17 +37,13 @@
         <img id="hachiware" src="image/hachiware.png" alt="ハチワレ">
     </div>
     <script>
-        // 音声認識を設定
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.lang = 'ja-JP';
 
-        function speak(text, voiceName, pitch, rate) {
+        function speak(text, pitch, rate) {
             const utterance = new SpeechSynthesisUtterance(text);
             const voices = window.speechSynthesis.getVoices();
-            const voice = voices.find(v => v.name === voiceName);
-            if (voice) {
-                utterance.voice = voice;
-            }
+            utterance.voice = voices.find(v => v.lang === 'ja-JP'); // 日本語の音声を使用
             utterance.pitch = pitch;
             utterance.rate = rate;
             window.speechSynthesis.speak(utterance);
@@ -61,7 +57,7 @@
             }
 
             // ちいかわのセリフを音声で再生
-            speak(`ちいかわ: ${inputText}`, 'Google 日本語', 9, 8);
+            speak(`ちいかわ: ${inputText}`, 1.5, 1.0);
 
             // 音声認識を開始
             recognition.start();
@@ -79,13 +75,21 @@
                     }
                 }).join(' ');
 
-                speak(`ハチワレ: ${hachiwareText}`, 'Google 日本語', 7, 9);
+                speak(`ハチワレ: ${hachiwareText}`, 0.9, 1.2);
             };
 
             recognition.onerror = function(event) {
                 console.error('音声認識エラー:', event.error);
             };
         }
+
+        // 利用可能な音声のリストを表示
+        window.speechSynthesis.onvoiceschanged = function() {
+            const voices = window.speechSynthesis.getVoices();
+            voices.forEach(voice => {
+                console.log(voice.name, voice.lang);
+            });
+        };
     </script>
 </body>
 </html>
