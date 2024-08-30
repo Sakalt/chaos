@@ -56,8 +56,8 @@
                 return;
             }
 
-            // ちいかわのセリフを音声で再生
-            speak(`ちいかわ: ${inputText}`, 1.5, 1.0);
+            // ちいかわのセリフを音声で再生（高めの声で速めに）
+            speak(`ちいかわ: ${inputText}`, 2.0, 1.2);
 
             // 音声認識を開始
             recognition.start();
@@ -65,7 +65,7 @@
             recognition.onresult = function(event) {
                 const spokenText = event.results[0][0].transcript;
 
-                // ハチワレのセリフを音声で再生（ちょっとずれるようにする）
+                // ハチワレのセリフを音声で再生（少し低めで普通の速さにする）
                 const words = spokenText.split(' ');
                 let hachiwareText = words.map(word => {
                     if (Math.random() > 0.1) { // 90%の確率で言葉をそのままにする
@@ -75,7 +75,7 @@
                     }
                 }).join(' ');
 
-                speak(`ハチワレ: ${hachiwareText}`, 0.9, 1.2);
+                speak(`ハチワレ: ${hachiwareText}`, 1.0, 1.0);
             };
 
             recognition.onerror = function(event) {
