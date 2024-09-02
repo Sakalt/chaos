@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ちいかわとハチワレの山彦ゲーム</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        #gameArea {
+            position: relative;
+            display: inline-block;
+        }
+        img {
+            width: 150px;
+            height: auto;
+            position: absolute;
+        }
+        #chiikawa {
+            top: 0;
+            left: 0;
+        }
+        #hachiware {
+            top: 0;
+            left: 200px; /* ハチワレをちいかわの右に配置 */
+        }
+    </style>
+</head>
+<body>
+    <h1>ちいかわとハチワレの山彦ゲーム</h1>
+    <input type="text" id="inputText" placeholder="ちいかわにしゃべらせる言葉を入力">
+    <button onclick="startGame()">ゲームスタート</button>
+    <div id="gameArea">
+        <img id="chiikawa" src="image/chiikawa.png" alt="ちいかわ">
+        <img id="hachiware" src="image/hachiware.png" alt="ハチワレ">
+    </div>
+    <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
+    <script>
+        function speak(text, pitch, rate) {
+            // ピッチや速度の調整はResponsiveVoiceでは行えませんが、音声合成は可能です。
+            responsiveVoice.speak(text, "Japanese Female", { rate: rate });
+        }
+
+        function startGame() {
+            const inputText = document.getElementById('inputText').value;
+            if (!inputText) {
+                alert('ちいかわにしゃべらせる言葉を入力してください。');
+                return;
+            }
+
+            // ちいかわのセリフを音声で再生
+            speak(`ちいかわ: ${inputText}`, 1.0, 1.2);
+
+            // 音声認識を開始
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'ja-JP';
+            recognition.interimResults = false;
+
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                const spokenText = event.results[0][0].transcript;
+
+                // ハチワレのセリフを音声で再生（単語をランダムに変更）
+                const words = spokenText.split(' ');
+                let hachiwareText = words.map(word => {
+                    if (Math.random() > 0.1) { // 90%の確率で言葉をそのままにする
+                        return word;
+                    } else { // 10%の確率で言葉をランダムに変更
+                        return word + (Math.random() > 0.5 ? 'あ' : 'い');
+                    }
+                }).join(' ');
+
+                // ハチワレのセリフを音声で再生
+                speak(`ハチワレ: ${hachiwareText}`, 1.0, 1.0);
+            };
+
+            recognition.onerror = function(event) {
+                console.error('音声認識エラー:', event.error);
+            };
+        }
+
+        // 利用可能な音声のリストを表示
+        window.speechSynthesis.onvoiceschanged = function() {
+            const voices = window.speechSynthesis.getVoices();
+            voices.forEach(voice => {
+                console.log(voice.name, voice.lang);
+            });
+        };
+    </script>
+</body>
+</html>
