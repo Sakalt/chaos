@@ -51,7 +51,7 @@
             }
 
             // ちいかわのセリフを音声で再生
-            speak(`ちいかわ: ${inputText}`, 1.2, 1.8);
+            speak(`ちいかわ: ${inputText}`, 2.0, 1.2);
 
             // 音声認識を開始
             const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
@@ -74,7 +74,7 @@
                 }).join(' ');
 
                 // ハチワレのセリフを音声で再生
-                speak(`ハチワレ: ${hachiwareText}`, 1.1, 1.9);
+                speak(`ハチワレ: ${hachiwareText}`, 1.1, 1.0);
             };
 
             recognition.onerror = function(event) {
